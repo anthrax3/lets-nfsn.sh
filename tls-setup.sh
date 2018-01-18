@@ -83,10 +83,15 @@ while IFS='' read -r Alias
 do
 	if [ -d "/home/public/${Alias}" ]
 	then
-		if [ ! -h "/home/public/${Alias}/.well-known" ]
+		if [ ! -d "/home/public/${Alias}/.well-known" ]
 		then
-			echo "Linking well-known for ${Alias}."
-			ln -s ../.well-known "/home/public/${Alias}/.well-known"
+			echo "Creating well-known directory for ${Alias}."
+			mkdir -p "/home/public/${Alias}/.well-known"
+		fi
+		if [ ! -d "/home/public/${Alias}/.well-known/acme-challenge" ]
+		then
+			echo "Linking acme-challenge for ${Alias}."
+			ln -s "${WELLKNOWN}" "/home/public/${Alias}/.well-known/acme-challenge"
 		fi
 	fi
 	if [ "${Reinstall}" = "yes" ]
