@@ -53,11 +53,10 @@ then
 	echo
 	echo "    https://letsencrypt.org/repository/"
 	echo
-	echo -n "Do you accept the Let's Encrypt Subscriber Agreement (y/n)? "
-	read yes
+	printf "Do you accept the Let's Encrypt Subscriber Agreement (y/n)? "
+	read -r yes
 	case $yes in
 		y|Y|yes|YES|Yes|yup)
-			break 2
 			;;
 		*)
 			echo "OK, tls-setup.sh will be aborted."
@@ -72,7 +71,7 @@ then
 	mkdir -p "${WELLKNOWN}"
 fi
 
-/usr/local/bin/nfsn list-aliases >${BASEDIR}/domains.txt
+/usr/local/bin/nfsn list-aliases >"${BASEDIR}/domains.txt"
 
 if [ ! -s "${BASEDIR}/domains.txt" ]
 then
@@ -80,14 +79,14 @@ then
 	return 10
 fi
 
-for Alias in `cat "${BASEDIR}/domains.txt"`
+while IFS='' read -r Alias
 do
 	if [ -d "/home/public/${Alias}" ]
 	then
 		if [ ! -h "/home/public/${Alias}/.well-known" ]
 		then
 			echo "Linking well-known for ${Alias}."
-			ln -s ../.well-known /home/public/${Alias}/.well-known
+			ln -s ../.well-known "/home/public/${Alias}/.well-known"
 		fi
 	fi
 	if [ "${Reinstall}" = "yes" ]
@@ -98,21 +97,21 @@ do
 			"${BASEDIR}/certs/${Alias}/privkey.pem" \
 		| /usr/local/bin/nfsn -i set-tls
 	fi
-done
+done <"${BASEDIR}/domains.txt"
 
 if [ "${Reinstall}" = "yes" ]
 then
 	return 0
 fi
 
-/usr/local/bin/dehydrated --cron >${BASEDIR}/dehydrated.out
+/usr/local/bin/dehydrated --cron >"${BASEDIR}/dehydrated.out"
 
-if fgrep -v INFO: "${BASEDIR}/dehydrated.out" | fgrep -v unchanged | fgrep -v 'Skipping renew' | fgrep -v 'Checking expire date' | egrep -q -v '^Processing' || [ "${Verbose}" = "yes" ]
+if grep -F -v INFO: "${BASEDIR}/dehydrated.out" | grep -F -v unchanged | grep -F -v 'Skipping renew' | grep -F -v 'Checking expire date' | grep -E -q -v '^Processing' || [ "${Verbose}" = "yes" ]
 then
 	cat "${BASEDIR}/dehydrated.out"
 fi
 
-if ! /usr/local/bin/nfsn test-cron tlssetup | fgrep -q 'exists=true'
+if ! /usr/local/bin/nfsn test-cron tlssetup | grep -F -q 'exists=true'
 then
 	echo Adding scheduled task to renew certificates.
 	/usr/local/bin/nfsn add-cron tlssetup /usr/local/bin/tls-setup.sh me ssh '?' '*' '*'
