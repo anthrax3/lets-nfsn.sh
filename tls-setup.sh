@@ -117,5 +117,3 @@ then
 	echo Adding scheduled task to renew certificates.
 	/usr/local/bin/nfsn add-cron tlssetup /usr/local/bin/tls-setup.sh me ssh '?' '*' '*'
 fi
-
-
